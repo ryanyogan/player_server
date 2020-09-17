@@ -7,7 +7,9 @@ import (
 )
 
 func TestRecordingWinsAndRetreivingThem(t *testing.T) {
-	store := NewInMemoryPlayerStore()
+	database, cleanDatabase := createTempFile(t, `[]`)
+	defer cleanDatabase()
+	store, err := NewFileSystemPlayerStore(database)
 	server := NewPlayerServer(store)
 	player := "Ryan"
 
@@ -18,6 +20,7 @@ func TestRecordingWinsAndRetreivingThem(t *testing.T) {
 	t.Run("get score", func(t *testing.T) {
 		response := httptest.NewRecorder()
 		server.ServeHTTP(response, newGetScoreRequest(player))
+		assertNoError(t, err)
 		assertStatus(t, response.Code, http.StatusOK)
 		assertResponseBody(t, response.Body.String(), "3")
 	})
@@ -25,6 +28,7 @@ func TestRecordingWinsAndRetreivingThem(t *testing.T) {
 	t.Run("get league", func(t *testing.T) {
 		response := httptest.NewRecorder()
 		server.ServeHTTP(response, newLeagueRequest())
+		assertNoError(t, err)
 		assertStatus(t, response.Code, http.StatusOK)
 
 		got := getLeagueFromRequest(t, response.Body)
